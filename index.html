@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DateDoodle · Fun Calendar Reminders</title>
+<style>
+  :root{
+    --lav-50:#faf7ff; --lav-100:#f1eafc; --lav-200:#e2d4f8; --lav-300:#cdb4f0;
+    --lav-400:#b18ee3; --lav-500:#9467d1; --lav-600:#7a4fb5; --lav-800:#3f2a63;
+    --ink:#3a2c52; --muted:#6f6388; --white:#fff;
+    --radius:18px; --shadow:0 10px 30px rgba(122,79,181,.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);background:#3a2c52}
+  .hidden{display:none!important}
+
+  /* NAV */
+  nav{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 6vw;background:rgba(250,247,255,.9);backdrop-filter:blur(8px);
+    position:sticky;top:0;z-index:10;border-bottom:1px solid var(--lav-200);
+  }
+  .logo{display:flex;align-items:center;gap:8px;font-size:1.5rem;font-weight:700;color:var(--lav-600);font-family:Georgia,serif}
+  .logo svg{width:26px;height:34px}
+  .nav-links{display:flex;align-items:center;gap:22px}
+  .nav-links a{color:var(--muted);font-weight:500}
+  .nav-links a:hover{color:var(--lav-600)}
+  .btn{
+    padding:11px 24px;border-radius:999px;font-weight:600;
+    background:linear-gradient(135deg,var(--lav-400),var(--lav-600));color:#fff;
+    box-shadow:0 6px 16px rgba(148,103,209,.35);transition:transform .15s,box-shadow .15s;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(148,103,209,.4)}
+  .btn.ghost{background:var(--lav-100);color:var(--lav-600);box-shadow:none}
+
+  /* HERO */
+  .hero{
+    text-align:center;padding:90px 6vw 70px;position:relative;overflow:hidden;
+    background:radial-gradient(circle at 50% 0%,var(--lav-200),var(--lav-50) 70%);
+  }
+  .hero .sprig{position:absolute;bottom:-20px;width:90px;opacity:.55}
+  .hero .s1{left:6%;transform:rotate(-12deg)} .hero .s2{right:6%;transform:rotate(12deg)}
+  .hero .s3{left:20%;width:60px;opacity:.35} .hero .s4{right:20%;width:60px;opacity:.35}
+  .eyebrow{display:inline-block;padding:6px 16px;border-radius:999px;background:var(--lav-100);color:var(--lav-600);font-size:.85rem;font-weight:600;margin-bottom:18px}
+  .hero h1{font-family:Georgia,serif;font-size:clamp(2.2rem,5.5vw,3.8rem);color:var(--lav-800);line-height:1.15;margin-bottom:20px}
+  .hero h1 span{color:var(--lav-500)}
+  .hero p{max-width:620px;margin:0 auto 14px;color:var(--muted);font-size:1.08rem}
+  .hero .btn{margin-top:18px;font-size:1.05rem;padding:14px 34px}
+
+  /* MIDDLE SECTION */
+  .whimsy{padding:80px 6vw;text-align:center}
+  .whimsy h2{font-family:Georgia,serif;font-size:clamp(1.7rem,4vw,2.6rem);color:var(--lav-800);margin-bottom:10px}
+  .whimsy .sub{color:var(--muted);margin-bottom:44px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px;max-width:1050px;margin:0 auto}
+  .card{
+    background:var(--white);border-radius:var(--radius);padding:28px 24px;text-align:left;
+    box-shadow:var(--shadow);border-top:5px solid var(--lav-400);transition:transform .2s;
+  }
+  .card:hover{transform:translateY(-6px)}
+  .tag{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--lav-500)}
+  .card h3{margin:6px 0 14px;font-size:1.2rem;color:var(--lav-800)}
+  .bubble{background:var(--lav-100);border-radius:14px;padding:14px 16px;color:var(--ink);font-style:italic;position:relative}
+  .bubble::before{content:"\1F514  Reminder";display:block;font-style:normal;font-size:.75rem;font-weight:700;color:var(--lav-600);margin-bottom:4px}
+
+  /* HOW */
+  .how{padding:20px 6vw 80px;text-align:center}
+  .steps{display:flex;flex-wrap:wrap;justify-content:center;gap:22px;max-width:900px;margin:30px auto 0}
+  .step{flex:1 1 220px;padding:22px;background:var(--lav-100);border-radius:var(--radius)}
+  .step b{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--lav-500);color:#fff;margin-bottom:10px}
+
+  footer{text-align:center;padding:30px;background:var(--lav-800);color:var(--lav-200);font-size:.9rem}
+
+  /* LOGIN MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(63,42,99,.5);display:grid;place-items:center;z-index:50;padding:20px}
+  .modal{background:#fff;border-radius:24px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative}
+  .modal h2{font-family:Georgia,serif;color:var(--lav-800);text-align:center;margin-bottom:4px}
+  .modal .sub{text-align:center;color:var(--muted);margin-bottom:22px;font-size:.95rem}
+  .modal .x{position:absolute;top:14px;right:18px;background:none;font-size:1.5rem;color:var(--muted)}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:5px;color:var(--lav-800)}
+  input,select{
+    width:100%;padding:12px 14px;border:1.5px solid var(--lav-200);border-radius:12px;
+    font:inherit;background:var(--lav-50);color:var(--ink);outline:none;
+  }
+  input:focus,select:focus{border-color:var(--lav-400);box-shadow:0 0 0 3px rgba(177,142,227,.25)}
+  .modal .btn{width:100%;margin-top:6px}
+  .switch{text-align:center;margin-top:16px;font-size:.9rem;color:var(--muted)}
+  .switch button{background:none;color:var(--lav-600);font-weight:600}
+
+  /* DASHBOARD */
+  .dash{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 67px)}
+  aside{background:var(--lav-100);padding:30px 22px;border-right:1px solid var(--lav-200)}
+  .avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--lav-300),var(--lav-500));color:#fff;display:grid;place-items:center;font-size:1.6rem;font-weight:700;margin-bottom:12px}
+  aside h3{color:var(--lav-800)} aside p{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+  .side-item{padding:11px 14px;border-radius:12px;margin-bottom:6px;color:var(--muted);font-weight:500}
+  .side-item.active{background:#fff;color:var(--lav-600);box-shadow:0 3px 10px rgba(148,103,209,.15)}
+  main{padding:34px 4vw}
+  main h1{font-family:Georgia,serif;color:var(--lav-800);font-size:1.9rem}
+  main .sub{color:var(--muted);margin-bottom:26px}
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:26px}
+  .panel{background:#fff;border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+  .panel h2{font-size:1.1rem;color:var(--lav-800);margin-bottom:14px}
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .cal-head h2{margin:0}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+  .dow{font-size:.75rem;font-weight:700;color:var(--lav-500);padding-bottom:4px}
+  .day{aspect-ratio:1;display:grid;place-items:center;border-radius:12px;font-size:.92rem;position:relative;cursor:pointer;background:var(--lav-50)}
+  .day:hover{background:var(--lav-200)}
+  .day.today{background:var(--lav-500);color:#fff;font-weight:700}
+  .day.has::after{content:"";position:absolute;bottom:6px;width:6px;height:6px;border-radius:50%;background:var(--lav-400)}
+  .day.today.has::after{background:#fff}
+  .day.empty{background:none;cursor:default}
+  .event{padding:14px;border-radius:14px;background:var(--lav-50);border-left:5px solid var(--lav-400);margin-bottom:12px}
+  .event small{color:var(--lav-500);font-weight:700}
+  .event strong{display:block;color:var(--lav-800)}
+  .event em{display:block;margin-top:4px;color:var(--muted);font-size:.92rem}
+  .add{margin-top:26px}
+  .add form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;align-items:end}
+
+  @media(max-width:800px){
+    .dash{grid-template-columns:1fr} aside{display:none} .grid{grid-template-columns:1fr}
+    .nav-links a{display:none}
+  }
+
+  /* ===== CALENDAR (pastel green) ===== */
+  :root{--g-50:#f3fbf4;--g-100:#dff4e3;--g-200:#c8ebce;--g-300:#a9dcb5;--g-500:#6fb383;--g-700:#3f7a52}
+  .cal-sec{padding:70px 6vw;text-align:center;background:var(--g-50)}
+  .cal-sec h2{font-family:Georgia,serif;font-size:clamp(1.7rem,4vw,2.4rem);color:var(--g-700);margin-bottom:8px}
+  .cal-sec .sub{color:var(--muted);margin-bottom:30px}
+  .ddcal{max-width:760px;margin:0 auto;background:#fff;border-radius:24px;padding:26px;box-shadow:0 10px 30px rgba(63,122,82,.15);border:2px solid var(--g-200)}
+  .ddcal-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+  .ddcal-top h3{color:var(--g-700);font-size:1.3rem;flex:1}
+  .navb{width:40px;height:40px;border-radius:50%;background:var(--g-100);color:var(--g-700);font-size:1.3rem}
+  .navb:hover{background:var(--g-200)}
+  .ddcal select{width:auto;padding:8px 12px;background:var(--g-50);border-color:var(--g-200)}
+  .dd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .dd-dow{font-size:.78rem;font-weight:700;color:var(--g-500);padding-bottom:4px}
+  .dd-day{aspect-ratio:1;display:grid;place-items:center;border-radius:12px;background:var(--g-50);cursor:pointer;position:relative;font-size:.95rem}
+  .dd-day:hover{background:var(--g-200)}
+  .dd-day.empty{background:none;cursor:default}
+  .dd-day.today{background:var(--g-300);font-weight:700}
+  .dd-day.sel{outline:2px solid var(--g-500)}
+  .dd-day.has::after{content:"";position:absolute;bottom:6px;width:6px;height:6px;border-radius:50%;background:var(--lav-500)}
+  .dd-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:20px}
+  .dd-foot span{color:var(--g-700);font-weight:600}
+  .btn.green{background:linear-gradient(135deg,var(--g-300),var(--g-500));box-shadow:0 6px 16px rgba(111,179,131,.4)}
+  .dd-list{margin-top:18px;text-align:left}
+  .dd-item{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:var(--g-50);border-left:5px solid var(--g-300);margin-bottom:10px}
+  .dd-item small{display:block;color:var(--g-700);font-weight:700}
+  .dd-item .acts{display:flex;gap:8px;align-items:center}
+  .dd-item input{width:auto;padding:6px 8px;font-size:.85rem}
+  .mini{padding:7px 14px;border-radius:999px;background:var(--lav-100);color:var(--lav-600);font-weight:600;font-size:.85rem}
+  .cats{display:grid;gap:10px;margin-top:14px}
+  .cat{padding:13px 16px;border-radius:14px;background:var(--g-50);border:1.5px solid var(--g-200);color:var(--ink);text-align:left;font-weight:600}
+  .cat:hover:not(:disabled){background:var(--g-100);border-color:var(--g-500)}
+  .cat:disabled{opacity:.5;cursor:not-allowed}
+  .slots{display:inline-block;margin-top:6px;padding:5px 14px;border-radius:999px;background:var(--lav-100);color:var(--lav-600);font-weight:700;font-size:.85rem}
+  .full-note{margin-top:12px;padding:12px;border-radius:12px;background:#fdf1f1;color:#a24b4b;font-size:.9rem}
+
+  /* ===== FAQ + CONTACT (bottom-up violet gradient) ===== */
+  .violet{background:linear-gradient(to top,#5b3299 0%,#8b5fcf 45%,#e6dafa 100%)}
+  .faq{padding:70px 6vw 40px;max-width:820px;margin:0 auto}
+  .faq h2{font-family:Georgia,serif;text-align:center;color:var(--lav-800);font-size:clamp(1.7rem,4vw,2.4rem);margin-bottom:28px}
+  .qa{background:rgba(255,255,255,.85);border-radius:16px;padding:20px 22px;margin-bottom:14px;box-shadow:0 6px 18px rgba(63,42,99,.12)}
+  .qa h3{color:var(--lav-800);font-size:1.05rem;margin-bottom:6px}
+  .qa p{color:var(--muted)}
+  .contact{padding:50px 6vw 70px;text-align:center;color:#fff}
+  .contact h2{font-family:Georgia,serif;font-size:1.9rem;margin-bottom:8px}
+  .contact p{color:#efe6ff;margin-bottom:22px}
+  .c-row{display:flex;flex-wrap:wrap;justify-content:center;gap:16px}
+  .c-box{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);border-radius:16px;padding:16px 26px;min-width:210px}
+  .c-box b{display:block;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#e2d4f8}
+</style>
+</head>
+<body>
+<!-- Reusable lavender flower -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="lavender" viewBox="0 0 40 100">
+      <path d="M20 98 C20 70 19 45 20 14" stroke="#7a9a6a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M20 70 C12 64 8 58 6 52" stroke="#7a9a6a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M20 78 C28 72 32 66 34 60" stroke="#7a9a6a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <g fill="#9467d1">
+        <ellipse cx="20" cy="8" rx="4" ry="6"/>
+        <ellipse cx="14" cy="18" rx="4" ry="6" transform="rotate(-20 14 18)"/>
+        <ellipse cx="26" cy="18" rx="4" ry="6" transform="rotate(20 26 18)"/>
+        <ellipse cx="20" cy="22" rx="4" ry="6"/>
+      </g>
+      <g fill="#b18ee3">
+        <ellipse cx="13" cy="30" rx="4" ry="6" transform="rotate(-20 13 30)"/>
+        <ellipse cx="27" cy="30" rx="4" ry="6" transform="rotate(20 27 30)"/>
+        <ellipse cx="20" cy="34" rx="4" ry="6"/>
+        <ellipse cx="14" cy="43" rx="4" ry="6" transform="rotate(-20 14 43)"/>
+        <ellipse cx="26" cy="43" rx="4" ry="6" transform="rotate(20 26 43)"/>
+      </g>
+      <g fill="#cdb4f0">
+        <ellipse cx="20" cy="47" rx="4" ry="6"/>
+        <ellipse cx="6" cy="48" rx="3.5" ry="5" transform="rotate(-20 6 48)"/>
+        <ellipse cx="34" cy="56" rx="3.5" ry="5" transform="rotate(20 34 56)"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<nav>
+  <div class="logo"><svg><use href="#lavender"/></svg> DateDoodle</div>
+  <div class="nav-links" id="navLinks">
+    <a href="#about">About</a>
+    <a href="#whimsy">Reminders</a>
+    <a href="#how">How it works</a>
+    <button class="btn" onclick="openLogin()">Log in</button>
+  </div>
+  <div class="nav-links hidden" id="navUser">
+    <span style="color:var(--muted)" id="navName"></span>
+    <button class="btn ghost" onclick="logout()">Log out</button>
+  </div>
+</nav>
+
+<!-- LANDING -->
+<div id="landing">
+  <header class="hero" id="about">
+    <svg class="sprig s1"><use href="#lavender"/></svg>
+    <svg class="sprig s2"><use href="#lavender"/></svg>
+    <svg class="sprig s3"><use href="#lavender"/></svg>
+    <svg class="sprig s4"><use href="#lavender"/></svg>
+    <span class="eyebrow">Welcome Aboard Sailor</span>
+    <h1>Welcome to <span>DateDoodle</span>,<br>Your calendar that knows how to slay</h1>
+    <p>Ever wished that Event Reminders were fun? Well you're at the right place Sailor!</p>
+    <p>No boring "Event at 3 PM" alerts here, get emails in language you understand bestie.</p>
+    <button class="btn" onclick="openLogin()">Get started</button>
+  </header>
+
+  <section class="how" id="how">
+    <h2 style="font-family:Georgia,serif;color:var(--lav-800)">How it works</h2>
+    <div class="steps">
+      <div class="step"><b>1</b><p>Create your free account and log in.</p></div>
+      <div class="step"><b>2</b><p>Mark an event on your calendar and pick its type.</p></div>
+      <div class="step"><b>3</b><p>Get a playful reminder when it's time.</p></div>
+    </div>
+  </section>
+
+  <section class="whimsy" id="whimsy">
+    <h2>Never miss out on chances to slay, Diva!</h2>
+    <p class="sub">A few examples of what lands in your emails:</p>
+    <div class="cards">
+      <div class="card">
+        <span class="tag">Birthday</span>
+        <h3>Sofia's Birthday</h3>
+        <div class="bubble">Don't be that giftless friend on this special day, brochoco.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Career</span>
+        <h3>Interview for AI Engineer</h3>
+        <div class="bubble">Go take that AI's job, dude!</div>
+      </div>
+      <div class="card">
+        <span class="tag">Fitness</span>
+        <h3>30 Day Workout Challenge</h3>
+        <div class="bubble">Those six packs won't build themselves, girlie pop!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="cal-sec" id="calendar">
+    <h2>Your calendar, 2026 to 2031</h2>
+    <p class="sub">Pick a day, then add an event and we'll handle the whimsy.</p>
+    <div class="ddcal">
+      <div class="ddcal-top">
+        <button class="navb" id="ddPrev" aria-label="Previous month">&#8249;</button>
+        <h3 id="ddTitle"></h3>
+        <select id="ddYear" aria-label="Year"></select>
+        <button class="navb" id="ddNext" aria-label="Next month">&#8250;</button>
+      </div>
+      <div class="dd-grid" id="ddGrid"></div>
+      <div class="dd-foot">
+        <span id="ddCount">0 of 5 events added</span>
+        <button class="btn green" id="ddAdd">+ Add event</button>
+      </div>
+      <div class="dd-list" id="ddList"></div>
+    </div>
+  </section>
+
+  <div class="violet">
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <h2>Frequently asked questions</h2>
+      <div class="qa"><h3>What is DateDoodle?</h3><p>DateDoodle is a calendar-based reminder tool. You mark your events, and it sends you fun, whimsical reminders matched to each event.</p></div>
+      <div class="qa"><h3>Can I only add 5 events? What if I want to add more?</h3><p>You can have 5 events at a time. You can edit, delete or reschedule any event whenever you like, and more events can be added whenever a slot is available.</p></div>
+      <div class="qa"><h3>Is it free to use?</h3><p>Yes, DateDoodle is free to use.</p></div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact">
+      <h2>Get in touch</h2>
+      <p>Questions, ideas, or a reminder you'd love to see? We'd love to hear from you.</p>
+      <div class="c-row">
+        <div class="c-box"><b>Email</b>hello@datedoodle.com</div>
+        <div class="c-box"><b>Phone</b>+00 000 000 0000</div>
+        <div class="c-box"><b>Address</b>Your address here</div>
+      </div>
+    </section>
+  </div>
+
+  <footer>DateDoodle · Made with lavender and a little mischief</footer>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="dash hidden">
+  <aside>
+    <div class="avatar" id="avatar">U</div>
+    <h3 id="sideName">User</h3>
+    <p id="sideEmail">user@email.com</p>
+    <div class="side-item active">Dashboard</div>
+    <div class="side-item">My Events</div>
+    <div class="side-item">Reminder Styles</div>
+    <div class="side-item">Settings</div>
+  </aside>
+  <main>
+    <h1 id="greet">Hello!</h1>
+    <p class="sub">Here's what's coming up. We'll make sure you don't forget.</p>
+    <div class="grid">
+      <div class="panel">
+        <div class="cal-head"><h2 id="monthTitle"></h2><span style="color:var(--lav-500)">Click a day to mark it</span></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="panel">
+        <h2>Upcoming reminders</h2>
+        <div id="eventList"></div>
+      </div>
+    </div>
+    <div class="panel add">
+      <h2>Add a new event</h2>
+      <form id="eventForm">
+        <div class="field"><label>Event name</label><input id="evName" required placeholder="e.g. Chemistry exam"></div>
+        <div class="field"><label>Date</label><input id="evDate" type="date" required></div>
+        <div class="field"><label>Type</label>
+          <select id="evType">
+            <option value="birthday">Birthday</option>
+            <option value="career">Interview / Work</option>
+            <option value="fitness">Fitness</option>
+            <option value="study">Exam / Study</option>
+          </select>
+        </div>
+        <button class="btn" type="submit">Add event</button>
+      </form>
+    </div>
+  </main>
+</div>
+
+
+<!-- ADD EVENT MODAL -->
+<div class="overlay hidden" id="ddModal">
+  <div class="modal">
+    <button class="x" id="ddClose" aria-label="Close">&times;</button>
+    <h2>Add an event</h2>
+    <p class="sub">Choose a category</p>
+    <div style="text-align:center"><span class="slots" id="ddSlots"></span></div>
+    <div class="cats" id="ddCats"></div>
+    <div class="full-note hidden" id="ddFull">All 5 slots are in use. Delete or reschedule an event to free up a slot.</div>
+    <form id="ddForm" class="hidden" style="margin-top:14px">
+      <p style="text-align:center;font-weight:700;color:var(--g-700);margin-bottom:12px" id="ddPicked"></p>
+      <div class="field"><label>Event name</label><input id="ddName" required maxlength="60"></div>
+      <div class="field"><label>Date (2026 to 2031)</label><input id="ddDate" type="date" min="2026-01-01" max="2031-12-31" required></div>
+      <button class="btn green" type="submit">Save event</button>
+      <p class="switch"><button type="button" id="ddBack">Back to categories</button></p>
+    </form>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="overlay hidden" id="loginModal">
+  <div class="modal">
+    <button class="x" onclick="closeLogin()" aria-label="Close">×</button>
+    <h2 id="modalTitle">Welcome back</h2>
+    <p class="sub" id="modalSub">Log in to see your reminders</p>
+    <form id="loginForm">
+      <div class="field" id="nameField" style="display:none"><label>Your name</label><input id="lName" placeholder="Your name"></div>
+      <div class="field"><label>Email</label><input id="lEmail" type="email" required placeholder="you@email.com"></div>
+      <div class="field"><label>Password</label><input id="lPass" type="password" required placeholder="••••••••"></div>
+      <button class="btn" type="submit" id="modalBtn">Log in</button>
+    </form>
+    <p class="switch"><span id="switchText">New here?</span> <button onclick="toggleMode()" id="switchBtn">Create an account</button></p>
+  </div>
+</div>
+
+<script>
+  /* Frontend-only demo: no real authentication or storage yet */
+  const pools = {
+    birthday:["Don't be the giftless friend on this special day brochacochip.","Cake alert! Show up with a gift and a smile."],
+    career:["Go take that job dude!","Deep breath, you've got this. Go shine."],
+    fitness:["Those six packs won't build themselves, girlie pop!","Your sneakers are staring at you. Go."],
+    study:["Brain, assemble! Time to show that exam who's boss.","Snacks packed, pen ready. Go be brilliant."]
+  };
+  const labels={birthday:"Birthday",career:"Career",fitness:"Fitness",study:"Study"};
+  const today = new Date();
+  const pad=n=>String(n).padStart(2,"0");
+  const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const soon=n=>{const d=new Date();d.setDate(d.getDate()+n);return key(d)};
+  let events=[
+    {name:"Birthday of Sofia",date:soon(2),type:"birthday",msg:pools.birthday[0]},
+    {name:"Interview for AI Engineer",date:soon(5),type:"career",msg:"Go take that AI's job dude!"},
+    {name:"30 Day Workout Challenge",date:soon(7),type:"fitness",msg:pools.fitness[0]}
+  ];
+  let signup=false;
+
+  const $=id=>document.getElementById(id);
+  function openLogin(){$("loginModal").classList.remove("hidden")}
+  function closeLogin(){$("loginModal").classList.add("hidden")}
+  function toggleMode(){
+    signup=!signup;
+    $("nameField").style.display=signup?"block":"none";
+    $("modalTitle").textContent=signup?"Join DateDoodle":"Welcome back";
+    $("modalSub").textContent=signup?"Create your account":"Log in to see your reminders";
+    $("modalBtn").textContent=signup?"Sign up":"Log in";
+    $("switchText").textContent=signup?"Already have an account?":"New here?";
+    $("switchBtn").textContent=signup?"Log in":"Create an account";
+  }
+  $("loginForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    const email=$("lEmail").value;
+    const name=(signup&&$("lName").value.trim())||email.split("@")[0];
+    const nice=name.charAt(0).toUpperCase()+name.slice(1);
+    $("avatar").textContent=nice.charAt(0);
+    $("sideName").textContent=nice; $("sideEmail").textContent=email;
+    $("greet").textContent=`Hello, ${nice}!`;
+    $("navName").textContent=nice;
+    closeLogin();
+    $("landing").classList.add("hidden"); $("dashboard").classList.remove("hidden");
+    $("navLinks").classList.add("hidden"); $("navUser").classList.remove("hidden");
+    render(); window.scrollTo(0,0);
+  });
+  function logout(){
+    $("dashboard").classList.add("hidden"); $("landing").classList.remove("hidden");
+    $("navUser").classList.add("hidden"); $("navLinks").classList.remove("hidden");
+    $("loginForm").reset();
+  }
+
+  function render(){
+    const y=today.getFullYear(), m=today.getMonth();
+    $("monthTitle").textContent=today.toLocaleString("default",{month:"long",year:"numeric"});
+    let html=["S","M","T","W","T","F","S"].map(d=>`<div class="dow">${d}</div>`).join("");
+    const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+    for(let i=0;i<first;i++) html+=`<div class="day empty"></div>`;
+    for(let d=1;d<=days;d++){
+      const k=`${y}-${pad(m+1)}-${pad(d)}`;
+      const cls=["day"]; if(d===today.getDate())cls.push("today"); if(events.some(e=>e.date===k))cls.push("has");
+      html+=`<div class="${cls.join(" ")}" onclick="pick('${k}')">${d}</div>`;
+    }
+    $("calGrid").innerHTML=html;
+    const sorted=[...events].sort((a,b)=>a.date.localeCompare(b.date));
+    $("eventList").innerHTML=sorted.map(e=>`
+      <div class="event"><small>${labels[e.type]} · ${e.date}</small>
+      <strong>${e.name}</strong><em>"${e.msg}"</em></div>`).join("")||"<p>No events yet.</p>";
+  }
+  function pick(k){$("evDate").value=k; $("evName").focus()}
+  $("eventForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    const type=$("evType").value, pool=pools[type];
+    events.push({name:$("evName").value,date:$("evDate").value,type,msg:pool[Math.floor(Math.random()*pool.length)]});
+    e.target.reset(); render();
+  });
+
+  /* ===== DateDoodle calendar (frontend only) ===== */
+  const DD_MAX=5;
+  const ddCats=["Exercise / Workout Routine","Birthday Reminders","Family and Friends Events","Job Interviews","Business Meetings","Parent Teacher Meeting","Others"];
+  const ddMonths=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const ddNow=new Date();
+  let ddY=Math.min(2031,Math.max(2026,ddNow.getFullYear())), ddM=(ddY===ddNow.getFullYear())?ddNow.getMonth():0;
+  let ddEvents=[], ddCat="", ddSel="";
+  const ddEsc=t=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const ddKey=(y,m,d)=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+  document.getElementById("ddYear").innerHTML=[2026,2027,2028,2029,2030,2031].map(y=>`<option>${y}</option>`).join("");
+
+  function ddDraw(){
+    document.getElementById("ddTitle").textContent=ddMonths[ddM]+" "+ddY;
+    document.getElementById("ddYear").value=ddY;
+    let h=["S","M","T","W","T","F","S"].map(d=>`<div class="dd-dow">${d}</div>`).join("");
+    const first=new Date(ddY,ddM,1).getDay(), n=new Date(ddY,ddM+1,0).getDate();
+    for(let i=0;i<first;i++) h+='<div class="dd-day empty"></div>';
+    for(let d=1;d<=n;d++){
+      const k=ddKey(ddY,ddM,d), c=["dd-day"];
+      if(k===ddKey(ddNow.getFullYear(),ddNow.getMonth(),ddNow.getDate())) c.push("today");
+      if(k===ddSel) c.push("sel");
+      if(ddEvents.some(e=>e.date===k)) c.push("has");
+      h+=`<div class="${c.join(" ")}" onclick="ddPick('${k}')">${d}</div>`;
+    }
+    document.getElementById("ddGrid").innerHTML=h;
+    document.getElementById("ddCount").textContent=`${ddEvents.length} of ${DD_MAX} events added`;
+    document.getElementById("ddList").innerHTML=[...ddEvents].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`
+      <div class="dd-item"><div><small>${ddEsc(e.cat)} · ${e.date}</small>${ddEsc(e.name)}</div>
+      <div class="acts"><input type="date" value="${e.date}" min="2026-01-01" max="2031-12-31" onchange="ddMove(${e.id},this.value)" aria-label="Reschedule">
+      <button class="mini" onclick="ddDel(${e.id})">Delete</button></div></div>`).join("");
+  }
+  function ddPick(k){ddSel=k;ddDraw()}
+  function ddMove(id,v){const e=ddEvents.find(x=>x.id===id);if(e&&v){e.date=v;ddDraw()}}
+  function ddDel(id){ddEvents=ddEvents.filter(x=>x.id!==id);ddDraw()}
+  function ddStep(delta){
+    ddM+=delta;
+    if(ddM>11){ddM=0;ddY++} if(ddM<0){ddM=11;ddY--}
+    if(ddY<2026){ddY=2026;ddM=0} if(ddY>2031){ddY=2031;ddM=11}
+    ddDraw();
+  }
+  document.getElementById("ddPrev").onclick=()=>ddStep(-1);
+  document.getElementById("ddNext").onclick=()=>ddStep(1);
+  document.getElementById("ddYear").onchange=e=>{ddY=+e.target.value;ddDraw()};
+
+  function ddOpen(){
+    const full=ddEvents.length>=DD_MAX;
+    document.getElementById("ddSlots").textContent=`${ddEvents.length} of ${DD_MAX} events used`;
+    document.getElementById("ddCats").classList.remove("hidden");
+    document.getElementById("ddCats").innerHTML=ddCats.map(c=>`<button class="cat" ${full?"disabled":""} onclick="ddChoose('${c}')">${c}</button>`).join("");
+    document.getElementById("ddFull").classList.toggle("hidden",!full);
+    document.getElementById("ddForm").classList.add("hidden");
+    document.getElementById("ddModal").classList.remove("hidden");
+  }
+  function ddShut(){document.getElementById("ddModal").classList.add("hidden")}
+  function ddChoose(c){
+    ddCat=c;
+    document.getElementById("ddPicked").textContent=c;
+    document.getElementById("ddCats").classList.add("hidden");
+    document.getElementById("ddForm").classList.remove("hidden");
+    document.getElementById("ddDate").value=ddSel;
+  }
+  document.getElementById("ddAdd").onclick=ddOpen;
+  document.getElementById("ddClose").onclick=ddShut;
+  document.getElementById("ddBack").onclick=ddOpen;
+  document.getElementById("ddForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    if(ddEvents.length>=DD_MAX) return ddOpen();
+    ddEvents.push({id:Date.now(),cat:ddCat,name:document.getElementById("ddName").value.trim(),date:document.getElementById("ddDate").value});
+    e.target.reset(); ddShut(); ddDraw();
+  });
+  ddDraw();
+</script>
+<script src="datedoodle.js"></script>
+<script src="datedoodle-api.js"></script>
+</body>
+</body>
+</html>
